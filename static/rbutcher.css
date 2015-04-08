@@ -1,0 +1,18 @@
+body {
+    height: 100%;
+    margin: 0;
+    font-family: sans-serif;
+}
+a {
+    color: darkblue;
+}
+ul {
+    list-style: none;
+    padding: 0;
+}
+p, ul {
+    margin-left: 1em;
+}
+.content {
+    margin: 2em;
+}
