@@ -1,273 +1,182 @@
-/*
-The image tags are being placed inside a noscript tag, making
-this page work with crawlers and browsers without JavaScript support.
-
-For browsers with JavaScript support, the noscript tag prevents the images
-from being rendered and downloaded. This script moves the images into the DOM,
-but changes the image URL to a tiny transparent image. When the user scrolls
-down the page, the image URLs are swapped to the real ones, and the images
-are displayed as normal.
-*/
-
-
-$.fn.pop = function(index) {
-    if (index == null) index = this.length;
-    var el = this.get(index);
-    this.splice(index, 1);
-    return $(el);
-};
-$.fn.popRandom = function() {
-    return this.pop(
-        Math.floor(Math.random() * this.length)
-    );
-};
-$.fn.shuffled = function() {
-    var $new = $('<div>');
-    while (this.length) {
-        $new.append(this.popRandom());
+// Renders the contents of <noscript> tags, which are treated as raw text by
+// browsers with JavaScript support. Optionally, provide a transform function
+// for the raw HTML, allowing it to be changed before being added to the DOM.
+$.fn.noscript = function(transform) {
+    if (transform === undefined) {
+        transform = function(html) {
+            return html;
+        }
     }
-    return $new.children();
+    this.find('noscript').each(function() {
+        var $noscript = $(this),
+            html = transform($noscript.text()),
+            $contents = $('<div>' + html + '</div>').contents();
+        $contents.insertAfter($noscript);
+        $noscript.remove()
+    })
+    return this;
+};
+
+
+// Handles lazy loading of images within the gallery.
+$.fn.lazyImage = function() {
+    var $a = $(this),
+        $img = $a.children('img');
+
+    if ($img.attr('src') === undefined) {
+        if ($img.length) {
+            // There is an image with a data-src attribute. Copy its
+            // information into the <a> element and then remove it.
+            // The image will be recreated later on, when the user
+            // needs to view it.
+            var alt = $img.attr('alt'),
+                src = $img.attr('data-src'),
+                width = $img.attr('width'),
+                height = $img.attr('height');
+
+            $a.attr({
+                'title': alt,
+                'data-img-src': src,
+                'data-img-ratio': parseInt(width) / parseInt(height)
+            }).css({
+                width: width + 'px',
+                height: height + 'px'
+            })
+
+            $img.remove()
+        } else {
+            // Display the image.
+            var src = $a.attr('data-img-src'),
+                width = $a.width(),
+                height = $a.height(),
+                idealSrc = flickrURL(src, width, height)
+            $a.append(
+                $('<img>').attr({
+                    alt: $a.attr('title'),
+                    src: idealSrc,
+                    width: width + 2 // fix for safari
+                })
+            )
+        }
+    }
+    return this;
 }
 
 
-// Loads a <noscript> tag, which is treated as raw text by the browser,
-// into a new <div> element. Optionally, provide a transform function
-// for the raw text, allowing it to be changed before being turned into
-// DOM elements.
-$.fn.noscript = function(transform) {
-    var html = this.find('noscript').text();
-    if (transform) {
-        html = transform(html);
-    }
-    return $('<div>' + html + '</div>');
-};
-
-
-// Renders an element as a gallery.
-// Todo: split into separate file and improve structure big time.
-$.fn.renderGallery = function(options) {
-    var $gallery = $(this),
-        galleryWidth = $gallery.width(),
-        rowHeight = options['rowHeight'],
-        selector = options['selector'];
-
-    if (isNaN(rowHeight)) {
-        throw 'Invalid number for rowHeight';
-    }
-
-    var newRow = function() {
-        return {
-            items: [],
-            width: 0,
-            // Add to end of items.
-            push: function($el) {
-                var width = parseFloat($el.attr('data-img-width')),
-                    ratio = parseFloat($el.attr('data-img-ratio')),
-                    newWidth = rowHeight * ratio;
-                this.width += newWidth;
-                this.items.push($el);
-            },
-            // Remove last item.
-            pop: function() {
-                var $el = this.items.pop(),
-                    width = parseFloat($el.attr('data-img-width')),
-                    ratio = parseFloat($el.attr('data-img-ratio')),
-                    newWidth = rowHeight * ratio;
-                this.width -= newWidth;
-                return $el;
-            },
-            // Remove first item.
-            shift: function() {
-                var $el = this.items.shift(),
-                    width = parseFloat($el.attr('data-img-width')),
-                    ratio = parseFloat($el.attr('data-img-ratio')),
-                    newWidth = rowHeight * ratio;
-                this.width -= newWidth;
-                return $el;
-            },
-            // Add to start of items.
-            unshift: function($el) {
-                var width = parseFloat($el.attr('data-img-width')),
-                    ratio = parseFloat($el.attr('data-img-ratio')),
-                    newWidth = rowHeight * ratio;
-                this.width += newWidth;
-                this.items.unshift($el);
-            },
-            ratio: function() {
-                return galleryWidth / this.width;
-            },
-            render: function() {
-                var imgHeight = rowHeight * this.ratio(galleryWidth),
-                    widthRemaining = galleryWidth;
-                for (var i=0; i<this.items.length; i++) {
-                    var $el = $(this.items[i]);
-
-                    // Safari has issues with non-integer sizes, so round all
-                    // of the widths up, and then make te last item use up the
-                    // remaining available space.
-                    if (i == this.items.length - 1) {
-                        // Last item in the row.
-                        imgWidth = widthRemaining;
-                    } else {
-                        imgRatio = parseFloat($el.attr('data-img-ratio'));
-                        imgWidth = Math.ceil(imgHeight * imgRatio);
-                        widthRemaining -= imgWidth;
-                    }
-
-                    $el.css('width', imgWidth).css('height', parseInt(imgHeight));
-                    if ($el.is('img')) {
-                        $el.attr('width', imgWidth).attr('height', imgHeight);
-                    } else {
-                        $el.find('img').each(function() {
-                            $(this).attr('width', imgWidth).attr('height', imgHeight);
-                        });
-                    }
-                }
+$.fn.resizeImage = function() {
+    var $this = $(this)
+    if ($this.is('a')) {
+        var $a = $this
+        $a.find('img').each(function() {
+            var $img = $(this),
+                src = $img.attr('src'),
+                width = $a.width(),
+                height = $a.height(),
+                idealSrc = flickrURL(src, width, height)
+            if (src != idealSrc) {
+                $img.attr('src', idealSrc)
             }
-        }
-    }
-
-    var newGallery = function($items) {
-
-        var gallery = {
-            push: function($el) {
-                // Add an image to the gallery.
-                this.row.push($el);
-                if (this.row.width > galleryWidth) {
-                    this.flush();
-                }
-            },
-            flush: function() {
-                // Move onto the next row.
-                this.rows.push(this.row);
-                this.row = newRow();
-            },
-            balance: function() {
-                // Ensure that the last row looks OK.
-                var lastRow = this.rows[this.rows.length - 1],
-                    prevRow = this.rows[this.rows.length - 2];
-                for (var i=0; i<5; i++) {
-                    if (lastRow.items.length == prevRow.items.length) {
-                        // The same number of images per row is fine,
-                        // even if the image sizes are quite different.
-                        break;
-                    }
-                    var ratio = lastRow.width / prevRow.width;
-                    if (i > 2) {
-                        // Log unexpected behaviour. I have not seen
-                        // this get logged since changing this logic.
-                        console.log(
-                            'Unexpected row sizes',
-                            prevRow.items.length,
-                            lastRow.items.length,
-                            ratio
-                        );
-                    }
-                    if (ratio > 0.6) {
-                        // The last row is easily more than half of the
-                        // size of the row before it. It's fine.
-                        break;
-                    } else if (ratio < 0.45) {
-                        // The last row is quite small compared to the row
-                        // before it. Move an image down into the last row.
-                        lastRow.push(prevRow.pop());
-                    } else {
-                        // The last row is roughly half of the size of the
-                        // row before it. Move an image up into the previous
-                        // row. This probably leaves the last row empty.
-                        prevRow.push(lastRow.shift());
-                        if (lastRow.items.length == 0) {
-                            break;
-                        }
-                    }
-                }
-            },
-            render: function() {
-                this.rows = []
-                this.row = newRow()
-                $items.each(function() {
-                    gallery.push($(this));
-                });
-                if (this.row.items.length) {
-                    this.flush();
-                }
-                this.balance();
-                $.each(this.rows, function() {
-                    this.render(this.width, rowHeight);
-                });
-            }
-        };
-
-        var resizeTimer = null;
-        $(window).on('resize', function() {
-            $gallery.css('width', galleryWidth + 'px');
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(function() {
-                $gallery.css('width', '');
-                galleryWidth = $gallery.width();
-                gallery.render();
-                $gallery.trigger('resize.gallery');
-            }, 500);
         })
-
-        return gallery;
-
-    };
-
-    var gallery = newGallery($gallery.find(selector));
-    gallery.render();
-
-    return this;
+    } else if ($this.is('img')) {
+        var src = $this.attr('src'),
+            idealSrc = flickrURL(src, $this.width(), $this.height())
+        if (src != idealSrc) {
+            $this.attr('src', idealSrc)
+        }
+    } else if (this.length) {
+        console.log("unexpected element for resizeImage", this)
+        throw "unexpected element for resizeImage"
+    }
+    return this
 }
 
 
 // Run when the document is ready.
 $(function() {
 
-    var $gallery = $('#gallery');
+    var $window = $(window);
 
-    $gallery
+    $('#gallery')
+        // Remove the CSS for browsers without JS support.
+        .removeClass('noscript')
+
+        // Render the HTML in the noscript tag, but swap out the
+        // image src attributes to avoid downloading the images.
+        // This data-src attribute is used by lazyImage().
         .noscript(function(html) {
-            return html.replace(/ src=/g, ' data-src=');
+            return html.replace(/ src=/g, ' data-src=')
+        })
+
+        // Process each link and associated image.
+        .find('a')
+            .each(function() {
+                $(this)
+                    // Enable lazy loading of this link's image.
+                    .lazyImage()
+                    // Add a callback for when the page
+                    // is scrolled down near this link.
+                    .scrollo(function() {
+                        // Force this link's image to load.
+                        this.el.lazyImage()
+                    }, 100)
+            })
+        .end()
+
+        // Enable the image grid, to display all photos in a grid layout.
+        .imgrid({
+            selector: 'a',
+            rowHeight: 400
         })
         .find('a')
-        .shuffled()
-        .each(function() {
-            var $a = $(this),
-                $img = $a.find('img'),
-                alt = $img.attr('alt'),
-                src = $img.attr('data-src'),
-                width = parseInt($img.attr('width')),
-                height = parseInt($img.attr('height')),
-                ratio = width / height;
+            .each(function() {
+                $(this).resizeImage()
+            })
+        .end()
+        .on('resize.imgrid', function() {
+            $(this).find('a').each(function() {
+                $(this).resizeImage()
+            })
+            $window.scrollo()
+        })
 
-            $a.css('width', width + 'px');
-            $a.css('height', height + 'px');
-            $a.attr('data-img-width', width);
-            $a.attr('data-img-ratio', ratio);
-            $a.attr('title', alt);
-
-            $img.remove();
-
-            $a.onScroll(function() {
-                $('<img>').attr({
-                    alt: alt,
-                    src: src,
-                    width: $a.width(),
-                    height: $a.height()
-                }).appendTo($a);
-            }, 100);
-
-            $gallery.append($a);
-        });
-
-    $gallery.renderGallery({
-        selector: 'a',
-        rowHeight: 400
-    });
-
-    $gallery.on('resize.gallery', function() {
-        $gallery.onScroll('resort');
-    });
-
+        // Enable lightbox functionality for the photos.
+        .magnificPopup({
+            delegate: 'a',
+            type: 'image',
+            closeOnContentClick: true,
+            closeBtnInside: false,
+            preloader: false,
+            callbacks: {
+                elementParse: function(item) {
+                    var src = item.el.attr('data-img-src'),
+                        ratio = parseFloat(item.el.attr('data-img-ratio')),
+                        height = $window.height(),
+                        width = height * ratio
+                    item.src = flickrURL(src, width, height)
+                }
+            },
+            image: {
+                verticalFit: true
+            },
+            gallery: {
+                enabled: true,
+                navigateByImgClick: false,
+                preload: [1, 2]
+            },
+            zoom: {
+                enabled: true
+            }
+        })
+        .on('mfpAfterChange mfpResize', function(event) {
+            // Update the lightbox images to use the best URLs for their sizes.
+            $.each($.magnificPopup.instance.items, function(index, item) {
+                if (item.el && this.src) {
+                    $.magnificPopup.instance.st.callbacks.elementParse(item)
+                }
+            })
+            // Update the currently visible image.
+            $('img.mfp-img').each(function() {
+                $(this).attr('src', $.magnificPopup.instance.currItem.src)
+            })
+        })
 });
