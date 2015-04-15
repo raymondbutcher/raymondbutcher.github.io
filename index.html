@@ -5,6 +5,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <meta name="description" content="A layout example that shows off a blog page with a list of posts.">
         <title>Raymond Butcher</title>
+        <link rel="shortcut icon" href="http://faviconist.com/icons/e1d179f99683b089cd18026dc267ad9d/favicon.ico">
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/pure-min.css">
         <!--[if lte IE 8]>
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-old-ie-min.css">
@@ -13,8 +14,7 @@
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/pure/0.6.0/grids-responsive-min.css">
         <!--<![endif]-->
         <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/font-awesome/4.3.0/css/font-awesome.min.css">
-        <link rel="stylesheet" href="./static/magnific.css">
-        <link rel="stylesheet" href="./static/rbutcher.css">
+        <link rel="stylesheet" href="./8be2dccf30d3f32994b149bd69d326e4.css">
         <!--[if lt IE 9]>
         <script src="http://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7/html5shiv.js"></script>
         <![endif]-->
@@ -25,19 +25,19 @@
             <div class="header">
                 <nav class="nav">
                     <ul class="nav-list">
-                        <li class="nav-item">
-                            <a class="pure-button" href="#home">
-                                <i class="fa fa-home fa-2x"></i>
-                                <span>Home</span>
+                        <li id="links-nav" class="nav-item">
+                            <a class="pure-button" href="#links">
+                                <i class="fa fa-external-link fa-2x"></i>
+                                <span>Links</span>
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li id="posts-nav" class="nav-item">
                             <a class="pure-button" href="#posts">
                                 <i class="fa fa-newspaper-o fa-2x"></i>
                                 <span>Posts</span>
                             </a>
                         </li>
-                        <li class="nav-item">
+                        <li id="photos-nav" class="nav-item">
                             <a class="pure-button" href="#photos">
                                 <i class="fa fa-camera-retro fa-2x"></i>
                                 <span>Photos</span>
@@ -48,9 +48,8 @@
             </div>
         </div>
 
-        <div id="home"></div>
-        <div class="content links pure-u-1 pure-u-md-3-4">
-            <h1 class="content-subhead">Presence</h1>
+        <div id="links" class="content links pure-u-1 pure-u-md-3-4">
+            <h1 class="content-subhead">Links</h1>
             <ul class="nav-list">
                 <li class="nav-item">
                     <a class="pure-button" href="https://www.facebook.com/raymond.butcher" target="_blank">
@@ -79,13 +78,11 @@
             </ul>
         </div>
 
-        <div class="content posts pure-u-1 pure-u-md-3-4">
-            <div id="posts"></div>
+        <div id="posts" class="content posts pure-u-1 pure-u-md-3-4">
             <h1 class="content-subhead">Posts</h1>
 
             <section class="post">
                 <header class="post-header">
-                    <!--<h2 class="post-title"><a href="">rbutcher.com</a></h2>-->
                     <h2 class="post-title">Making rbutcher.com</h2>
                     <p class="post-meta">
                         April 14, 2015
@@ -104,26 +101,14 @@
                         page and its data.
                     </p>
                     <p>
-                        I have also written some JavaScript for the photo
-                        gallery. In particular, it performs lazy loading of
-                        the images and it calculates the layout to display
-                        the images in a grid.
-                    </p>
-                    <p>
-                        Well, that's it for now.
+                        Well, that's it for now. I'll add real content later.
                     </p>
                 </div>
-                <!--
-                <div class="read-more">
-                    <a href="">Read more<i class="fa fa-arrow-circle-right"></i></a>
-                </div>
-                -->
-
             </section>
+
         </div>
 
-        <div class="content photos pure-u-1 pure-u-md-3-4">
-            <div id="photos"></div>
+        <div id="photos" class="content photos pure-u-1 pure-u-md-3-4">
             <h1 class="content-subhead">Photos</h1>
 
             <section class="gallery">
@@ -249,10 +234,6 @@
         </div>
 
         <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-        <script src="./static/flickr.js"></script>
-        <script src="./static/imgrid.js"></script>
-        <script src="./static/magnific.js"></script>
-        <script src="./static/scrollo.js"></script>
-        <script src="./static/rbutcher.js"></script>
+        <script src="./c2d9c15a3a2852db132689cb65270990.js"></script>
     </body>
 </html>
